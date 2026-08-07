@@ -11,35 +11,38 @@
 <body>
   <div id="map"></div>
 
-  <!-- 카카오 JS 키는 공개해도 되는 값이에요 (비밀키 아님, 도메인 제한으로 보안 처리됨) -->
-  <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=8e4a257eca1c9537964f714d2d32f3be"></script>
+  <!-- autoload=false 파라미터 추가 -->
+  <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=8e4a257eca1c9537964f714d2d32f3be&autoload=false"></script>
   <script>
-    function getParam(name, fallback) {
-      var params = new URLSearchParams(window.location.search);
-      var value = params.get(name);
-      return value !== null ? value : fallback;
-    }
+    // 카카오 지도 API 로드가 완료된 후 안전하게 실행
+    kakao.maps.load(function() {
+      function getParam(name, fallback) {
+        var params = new URLSearchParams(window.location.search);
+        var value = params.get(name);
+        return value !== null ? value : fallback;
+      }
 
-    var lat = parseFloat(getParam('lat', '37.5665'));
-    var lng = parseFloat(getParam('lng', '126.9780'));
-    var name = decodeURIComponent(getParam('name', ''));
+      var lat = parseFloat(getParam('lat', '37.5665'));
+      var lng = parseFloat(getParam('lng', '126.9780'));
+      var name = decodeURIComponent(getParam('name', ''));
 
-    var map = new kakao.maps.Map(document.getElementById('map'), {
-      center: new kakao.maps.LatLng(lat, lng),
-      level: 3
-    });
-
-    var marker = new kakao.maps.Marker({
-      position: new kakao.maps.LatLng(lat, lng),
-      map: map
-    });
-
-    if (name) {
-      var infowindow = new kakao.maps.InfoWindow({
-        content: '<div style="padding:6px 10px;font-size:13px;white-space:nowrap;">' + name + '</div>'
+      var map = new kakao.maps.Map(document.getElementById('map'), {
+        center: new kakao.maps.LatLng(lat, lng),
+        level: 3
       });
-      infowindow.open(map, marker);
-    }
+
+      var marker = new kakao.maps.Marker({
+        position: new kakao.maps.LatLng(lat, lng),
+        map: map
+      });
+
+      if (name) {
+        var infowindow = new kakao.maps.InfoWindow({
+          content: '<div style="padding:6px 10px;font-size:13px;white-space:nowrap;">' + name + '</div>'
+        });
+        infowindow.open(map, marker);
+      }
+    });
   </script>
 </body>
 </html>
