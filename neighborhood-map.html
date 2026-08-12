@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>맨발맵 - 동네지도</title>
+  <style>html, body, #map { width: 100%; height: 100%; margin: 0; padding: 0; }</style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <!-- 카카오 JS 키는 공개해도 되는 값이에요 (비밀키 아님, 도메인 제한으로 보안 처리됨) -->
+  <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=8e4a257eca1c9537964f714d2d32f3be"></script>
+  <script>
+    function getParam(name, fallback) {
+      var params = new URLSearchParams(window.location.search);
+      var value = params.get(name);
+      return value !== null ? value : fallback;
+    }
+
+    var lat = parseFloat(getParam('lat', '37.5665'));
+    var lng = parseFloat(getParam('lng', '126.9780'));
+
+    var map = new kakao.maps.Map(document.getElementById('map'), {
+      center: new kakao.maps.LatLng(lat, lng),
+      level: 5
+    });
+
+    // 맛집·카페, 평가된 맨발길, 기본 트레일 마커는 각각 이 배열에 모아두고,
+    // RN 쪽에서 injectJavaScript로 통째로 지웠다 다시 그려요.
+    var foodMarkers = [];
+    var trailRatingMarkers = [];
+    var baseTrailMarkers = [];
+
+    // 지금 열려있는 정보창을 추적해서, 다른 마커를 누르거나 지도 빈 곳을 누르면 자동으로 닫아요
+    var currentInfoWindow = null;
+    kakao.maps.event.addListener(map, 'click', function () {
+      if (currentInfoWindow) {
+        currentInfoWindow.close();
+        currentInfoWindow = null;
+      }
+    });
+
+    var myMarker = new kakao.maps.Circle({
+      center: new kakao.maps.LatLng(lat, lng),
+      radius: 10,
+      strokeWeight: 2,
+      strokeColor: '#4285F4',
+      fillColor: '#4285F4',
+      fillOpacity: 0.7
+    });
+    myMarker.setMap(map);
+
+    // RN에서 검색/지역칩/현재위치 등으로 위치를 바꾸면 이 함수를 호출해요 (지도를 다시 불러오지 않고 이동만)
+    function recenterMap(newLat, newLng) {
+      var pos = new kakao.maps.LatLng(newLat, newLng);
+      map.setCenter(pos);
+      myMarker.setPosition(pos);
+    }
+
+    function reportBounds() {
+      var b = map.getBounds();
+      var sw = b.getSouthWest();
+      var ne = b.getNorthEast();
+      window.ReactNativeWebView.postMessage(JSON.stringify({
+        type: 'bounds',
+        sw: { lat: sw.getLat(), lng: sw.getLng() },
+        ne: { lat: ne.getLat(), lng: ne.getLng() }
+      }));
+    }
+    kakao.maps.event.addListener(map, 'idle', reportBounds);
+    reportBounds();
+
+    // 지도가 준비됐다고 RN에 알려줘요 (RN은 이 신호를 받은 뒤부터 트레일 마커를 그려요)
+    window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'ready' }));
+  </script>
+</body>
+</html>
